@@ -59,3 +59,20 @@ class Cast(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Movie(models.Model):
+    """Movie Model"""
+    title = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    duration = models.DurationField(help_text='Enter hours and minutes only')
+    url = models.CharField(max_length=400, blank=True)
+    price = models.DecimalField(max_digits=7, decimal_places=3)
+    cast = models.ManyToManyField('Cast')
+    tag = models.ManyToManyField('Tag')
+
+    def __str__(self):
+        return self.title

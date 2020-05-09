@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-
-from core.models import Tag, Cast
+import datetime
+from core.models import Tag, Cast, Movie
 
 
 def sample_user(email='sam@yahoo.com', password='jhjnaa1122'):
@@ -62,3 +62,13 @@ class ModelTests(TestCase):
             name='Andy Samberg'
         )
         self.assertEqual(str(cast), cast.name)
+
+    def test_movie_str(self):
+        """Testing movie model"""
+        movie = Movie.objects.create(
+            user=sample_user(),
+            title='Brooklyn 9-9',
+            duration=datetime.timedelta(minutes=40),
+            price=18.00
+        )
+        self.assertEqual(str(movie), movie.title)
