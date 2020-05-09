@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
-from core.models import Tag
+from core.models import Tag, Cast
 
 
 def sample_user(email='sam@yahoo.com', password='jhjnaa1122'):
@@ -48,9 +48,17 @@ class ModelTests(TestCase):
         self.assertTrue(user.is_staff)
 
     def test_tag_str(self):
-        """Testing the tag string model"""
+        """Testing the tag string method"""
         tag = Tag.objects.create(
             user=sample_user(),
             name='genre'
         )
         self.assertEqual(str(tag), tag.name)
+
+    def test_cast_str(self):
+        """Testing the cast string method"""
+        cast = Cast.objects.create(
+            user=sample_user(),
+            name='Andy Samberg'
+        )
+        self.assertEqual(str(cast), cast.name)
