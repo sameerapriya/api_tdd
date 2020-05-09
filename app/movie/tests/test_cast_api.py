@@ -17,6 +17,7 @@ class PublicApiCastTests(TestCase):
         self.client = APIClient()
 
     def test_cast_get(self):
+        """Test that login is required for this endpoint"""
         res = self.client.get(CAST_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -55,3 +56,23 @@ class PrivateApiCastTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]['name'], cast.name)
+
+    def test_create_cast(self):
+        """Tests for creating valid cast"""
+        payload = {
+            'name': 'Raymond Holt'
+        }
+        self.client.post(CAST_URL, payload)
+        exists = Cast.objects.filter(
+            user=self.user,
+            name=payload['name']
+        ).exists()
+        self.assertTrue(exists)
+
+    def test_create_cast_invalid(self):
+        """Tests for creating invalid cast"""
+        payload = {
+            'name': ''
+        }
+        res = self.client.post(CAST_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
