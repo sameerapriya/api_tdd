@@ -2,9 +2,9 @@ from rest_framework import mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from core.models import Tag, Cast
+from core.models import Tag, Cast, Movie
 
-from .serializers import TagSerializer, CastSerializer
+from .serializers import CastSerializer, TagSerializer, MovieSerializer
 
 
 class BaseMovieAttrViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
@@ -35,3 +35,13 @@ class CastApiViewSet(BaseMovieAttrViewSet):
     queryset = Cast.objects.all()
 
     serializer_class = CastSerializer
+
+
+class MovieApiViewSet(viewsets.ModelViewSet):
+    serializer_class = MovieSerializer
+    queryset = Movie.objects.all()
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).order_by('-id')

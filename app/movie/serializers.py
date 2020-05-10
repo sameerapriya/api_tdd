@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Tag, Cast
+from core.models import Tag, Cast, Movie
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -16,4 +16,17 @@ class CastSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cast
         fields = ('id', 'name',)
+        read_only_fields = ('id',)
+
+
+class MovieSerializer(serializers.ModelSerializer):
+    """Serializer for movie objects"""
+    cast = serializers.PrimaryKeyRelatedField(many=True,
+                                              queryset=Cast.objects.all())
+    tag = serializers.PrimaryKeyRelatedField(many=True,
+                                             queryset=Tag.objects.all())
+
+    class Meta:
+        model = Movie
+        fields = ('id', 'title', 'url', 'tag', 'cast', 'duration', 'price')
         read_only_fields = ('id',)
