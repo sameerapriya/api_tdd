@@ -4,7 +4,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from core.models import Tag, Cast, Movie
 
-from .serializers import CastSerializer, TagSerializer, MovieSerializer
+from .serializers import CastSerializer, TagSerializer,\
+    MovieSerializer, MovieDetailSerializer
 
 
 class BaseMovieAttrViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
@@ -44,4 +45,11 @@ class MovieApiViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
+        """Returns objects for authenticated user"""
         return self.queryset.filter(user=self.request.user).order_by('-id')
+
+    def get_serializer_class(self):
+        """Retrieval of serializer class"""
+        if self.action == 'retrieve':
+            return MovieDetailSerializer
+        return self.serializer_class

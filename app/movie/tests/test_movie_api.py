@@ -5,10 +5,20 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Movie
-from movie.serializers import MovieSerializer
+from core.models import Movie, Tag, Cast
+from movie.serializers import MovieSerializer, MovieDetailSerializer
 
 import datetime
+
+
+def sample_tag(user, name='Comedy'):
+    """Creates a sample Tag"""
+    return Tag.objects.create(user=user, name=name)
+
+
+def sample_cast(user, name='David'):
+    """Creates a sample Cast"""
+    return Cast.objects.create(user=user, name=name)
 
 
 def sample_movie(user, **params):
@@ -24,6 +34,11 @@ def sample_movie(user, **params):
 
 
 MOVIE_URL = reverse('movie:movie-list')
+
+
+def detail_url(movie_id):
+    """Return movie detail url"""
+    return reverse('movie:movie-detail', args=[movie_id])
 
 
 class PublicApiMovieTests(TestCase):
@@ -47,6 +62,7 @@ class PrivateApiMovieTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_successful_retrieve(self):
+        """Tests for authorized access of page"""
         sample_movie(self.user)
         sample_movie(self.user)
         res = self.client.get(MOVIE_URL)
@@ -56,6 +72,7 @@ class PrivateApiMovieTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_movies_limited_to_user(self):
+        """Tests for movies access limited to the respective user."""
         sample_movie(self.user)
         user_1 = get_user_model().objects.create_user(
             'hello@test.com',
@@ -66,4 +83,15 @@ class PrivateApiMovieTests(TestCase):
         serializer = MovieSerializer(movies, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_view_movie_detail(self):
+        """Detail view of movies """
+        movie = sample_movie(user=self.user)
+        movie.tag.add(sample_tag(user=self.user))
+        movie.cast.add(sample_cast(user=self.user))
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+        serializer = MovieDetailSerializer(movie)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)

@@ -30,3 +30,9 @@ class MovieSerializer(serializers.ModelSerializer):
         model = Movie
         fields = ('id', 'title', 'url', 'tag', 'cast', 'duration', 'price')
         read_only_fields = ('id',)
+
+
+class MovieDetailSerializer(MovieSerializer):
+    """Serializes the detail Movie"""
+    cast = CastSerializer(many=True, read_only=True)
+    tag = TagSerializer(many=True, read_only=True)
