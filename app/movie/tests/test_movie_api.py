@@ -146,3 +146,38 @@ class PrivateApiMovieTests(TestCase):
         self.assertEqual(casts.count(), 2)
         self.assertIn(cast1, casts)
         self.assertIn(cast2, casts)
+
+    def test_patch_movie(self):
+        movie = sample_movie(user=self.user)
+        movie.tag.add(sample_tag(user=self.user))
+        new_tag = sample_tag(user=self.user, name='Horror')
+        payload = {
+            'title': 'Baby Babyy',
+            'tag': [new_tag.id]
+        }
+        url = detail_url(movie.id)
+        res = self.client.patch(url, payload)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, payload['title'])
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        tags = movie.tag.all()
+        self.assertEqual(len(tags), 1)
+        self.assertIn(new_tag, tags)
+
+    def test_put_movie(self):
+        movie = sample_movie(user=self.user)
+        movie.tag.add(sample_tag(user=self.user))
+        payload = {
+            'title': 'BBT',
+            'duration': datetime.timedelta(minutes=30),
+            'price': decimal.Decimal('5.990')
+        }
+        url = detail_url(movie.id)
+        res = self.client.put(url, payload)
+        movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie.title, payload['title'])
+        self.assertEqual(movie.duration, payload['duration'])
+        self.assertEqual(movie.price, payload['price'])
+        tags = movie.tag.all()
+        self.assertEqual(len(tags), 0)
