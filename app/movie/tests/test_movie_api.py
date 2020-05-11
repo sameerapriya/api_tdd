@@ -9,6 +9,7 @@ from core.models import Movie, Tag, Cast
 from movie.serializers import MovieSerializer, MovieDetailSerializer
 
 import datetime
+import decimal
 
 
 def sample_tag(user, name='Comedy'):
@@ -95,3 +96,53 @@ class PrivateApiMovieTests(TestCase):
         serializer = MovieDetailSerializer(movie)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_movie(self):
+        """Test for creation of movie"""
+        payload = {
+            'title': 'Se7en',
+            'duration': datetime.timedelta(hours=1, minutes=43),
+            'price': decimal.Decimal('7.990')
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=res.data['id'])
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        for key in payload.keys():
+            self.assertEqual(payload[key], getattr(movie, key))
+
+    def test_create_movie_tag(self):
+        """Test for creation of movie with tags"""
+        tag1 = sample_tag(user=self.user)
+        tag2 = sample_tag(user=self.user, name='Drama')
+        payload = {
+            'title': 'House',
+            'duration': datetime.timedelta(minutes=40),
+            'price': 8.99,
+            'tag': [tag1.id, tag2.id]
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=res.data['id'])
+        tags = movie.tag.all()
+        self.assertEqual(tags.count(), 2)
+        self.assertIn(tag1, tags)
+        self.assertIn(tag2, tags)
+
+    def test_create_cast_tag(self):
+        """Test for creation of movie with cast"""
+        cast1 = sample_cast(user=self.user)
+        cast2 = sample_cast(user=self.user, name='Dwayne')
+        payload = {
+            'title': 'FF7',
+            'duration': datetime.timedelta(hours=2, minutes=4),
+            'price': 10,
+            'cast': [cast1.id, cast2.id]
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=res.data['id'])
+        casts = movie.cast.all()
+        self.assertEqual(casts.count(), 2)
+        self.assertIn(cast1, casts)
+        self.assertIn(cast2, casts)
