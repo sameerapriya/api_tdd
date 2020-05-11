@@ -36,3 +36,11 @@ class MovieDetailSerializer(MovieSerializer):
     """Serializes the detail Movie"""
     cast = CastSerializer(many=True, read_only=True)
     tag = TagSerializer(many=True, read_only=True)
+
+
+class MovieImageSerializer(serializers.ModelSerializer):
+    """Serializer which lets us upload an image for the movie poster."""
+    class Meta:
+        model = Movie
+        fields = ('id', 'image')
+        read_only_fields = ('id',)

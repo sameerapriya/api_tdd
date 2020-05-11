@@ -1,3 +1,7 @@
+import os
+import tempfile
+from PIL import Image
+
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -40,6 +44,11 @@ MOVIE_URL = reverse('movie:movie-list')
 def detail_url(movie_id):
     """Return movie detail url"""
     return reverse('movie:movie-detail', args=[movie_id])
+
+
+def image_upload_url(movie_id):
+    """Returns an image upload URL"""
+    return reverse('movie:movie-upload-image', args=[movie_id])
 
 
 class PublicApiMovieTests(TestCase):
@@ -181,3 +190,37 @@ class PrivateApiMovieTests(TestCase):
         self.assertEqual(movie.price, payload['price'])
         tags = movie.tag.all()
         self.assertEqual(len(tags), 0)
+
+
+class PrivateImageUploadTests(TestCase):
+    """Class for testing image uploading functionality"""
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            'test1@test.com', 'testhello'
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie(user=self.user)
+
+    def tearDown(self):
+        self.movie.image.delete()
+
+    def test_upload_image_movie(self):
+        """Test for uploading an image to movie"""
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            res = self.client.post(url, {'image': ntf}, format='multipart')
+
+        self.movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('image', res.data)
+        self.assertTrue(os.path.exists(self.movie.image.path))
+
+    def test_upload_invalid_image(self):
+        """Test for uploading an invalid image"""
+        url = image_upload_url(self.movie.id)
+        res = self.client.post(url, {'image': 'lol'}, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
