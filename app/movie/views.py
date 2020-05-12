@@ -48,9 +48,23 @@ class MovieApiViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     parser_classes = (FormParser, MultiPartParser, JSONParser)
 
+    def _params_to_int(self, qs):
+        """Returns a string format of id to a list format"""
+        return [int(str_id) for str_id in qs.split(',')]
+
     def get_queryset(self):
         """Returns objects for authenticated user"""
-        return self.queryset.filter(user=self.request.user).order_by('-id')
+        tag = self.request.query_params.get('tag')
+        cast = self.request.query_params.get('cast')
+        queryset = self.queryset
+        if tag:
+            tag_ids = self._params_to_int(tag)
+            queryset = queryset.filter(tag__id__in=tag_ids)
+        if cast:
+            cast_ids = self._params_to_int(cast)
+            queryset = queryset.filter(cast__id__in=cast_ids)
+
+        return queryset.filter(user=self.request.user).order_by('-id')
 
     def get_serializer_class(self):
         """Retrieval of serializer class"""
