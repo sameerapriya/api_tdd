@@ -6,7 +6,9 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 
 from movie.serializers import CastSerializer
-from core.models import Cast
+from core.models import Cast, Movie
+
+import datetime
 
 CAST_URL = reverse('movie:cast-list')
 
@@ -76,3 +78,43 @@ class PrivateApiCastTests(TestCase):
         }
         res = self.client.post(CAST_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_movie_assigned_cast_display(self):
+        """Tests for retrieving assigned only cast"""
+        cast1 = Cast.objects.create(user=self.user, name='Jim Carrey')
+        cast2 = Cast.objects.create(user=self.user, name='John Krakinski')
+        movie = Movie.objects.create(
+            user=self.user,
+            title='The Mask',
+            duration=datetime.timedelta(hours=2, minutes=3),
+            price=10.00
+        )
+        movie.cast.add(cast1)
+        res = self.client.get(CAST_URL, {'assigned_only': 1})
+        serializer1 = CastSerializer(cast1)
+        serializer2 = CastSerializer(cast2)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_movie_unique_cast_display(self):
+        """Tests for retrieving unique cast"""
+        cast1 = Cast.objects.create(user=self.user, name='Jim Carrey')
+        movie1 = Movie.objects.create(
+            user=self.user,
+            title='The Truman Show',
+            duration=datetime.timedelta(hours=2, minutes=40),
+            price=7.56
+        )
+        movie1.cast.add(cast1)
+        movie2 = Movie.objects.create(
+            user=self.user,
+            title='Yes Man',
+            duration=datetime.timedelta(hours=1, minutes=37),
+            price=8.99
+        )
+        movie2.cast.add(cast1)
+        res = self.client.get(CAST_URL, {'assigned_only': 1})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)

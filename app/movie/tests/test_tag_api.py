@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from movie.serializers import TagSerializer
-from core.models import Tag
+from core.models import Tag, Movie
+import datetime
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -78,3 +79,44 @@ class PrivateApiTagTests(TestCase):
         payload = {'name': ''}
         res = self.client.post(TAG_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_movie_assigned_tags_display(self):
+        """Test for returning only assigned tags for the movie"""
+        tag1 = Tag.objects.create(user=self.user, name='Drama')
+        tag2 = Tag.objects.create(user=self.user, name='Romance')
+        movie = Movie.objects.create(
+            user=self.user,
+            title='Desperate Housewives',
+            duration=datetime.timedelta(minutes=40),
+            price=5.99
+        )
+        movie.tag.add(tag1)
+        res = self.client.get(TAG_URL, {'assigned_only': 1})
+        serializer1 = TagSerializer(tag1)
+        serializer2 = TagSerializer(tag2)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+        self.assertEqual(len(res.data), 1)
+
+    def test_movie_assigned_tags_unique(self):
+        """Tests for returning unique tags for different movie's assigned to"""
+        tag1 = Tag.objects.create(user=self.user, name='Feel Good')
+        movie_1 = Movie.objects.create(
+            user=self.user,
+            title='A walk to remember',
+            duration=datetime.timedelta(hours=1, minutes=59),
+            price=9.00
+        )
+        movie_1.tag.add(tag1)
+        movie_2 = Movie.objects.create(
+            user=self.user,
+            title='Eternal sunshine of spotless mind',
+            duration=datetime.timedelta(hours=2, minutes=5),
+            price=18.00
+        )
+        movie_2.tag.add(tag1)
+
+        res = self.client.get(TAG_URL, {'assigned_only': 1})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
