@@ -4,4 +4,4 @@ psycopg2==2.7.7
 
 flake8==3.7.9
 model_mommy
-Pillow==7.1.2
+Pillow==8.1.1
